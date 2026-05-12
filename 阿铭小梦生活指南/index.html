@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#E8734A">
+  <title>阿铭小梦的生活指南</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- 顶部栏 -->
+  <header class="app-header">
+    <div class="header-title">🏠 阿铭小梦的生活指南</div>
+    <div class="header-right">
+      <div class="header-date" id="headerDate"></div>
+      <button class="header-settings-btn" onclick="openWeatherSettings()" title="天气设置">⚙️</button>
+      <button class="header-settings-btn" onclick="openFamilyModal()" title="家庭同步">👨‍👩‍👧</button>
+    </div>
+  </header>
+
+  <main class="pages-container">
+
+    <!-- ======== 首页 ======== -->
+    <section id="page-home" class="page active">
+      <div class="home-hero">
+        <div class="home-greeting" id="homeGreeting">你好！</div>
+        <div class="home-date-display" id="homeDateDisplay"></div>
+      </div>
+      <div class="quick-cards">
+        <div class="quick-card" onclick="navigateTo('calendar')">
+          <div class="quick-card-icon">🌤️</div>
+          <div class="quick-card-info">
+            <div class="quick-card-title">今日天气</div>
+            <div class="quick-card-value" id="homeWeather">加载中...</div>
+          </div>
+        </div>
+        <div class="quick-card" onclick="navigateTo('parenting')">
+          <div class="quick-card-icon">👶</div>
+          <div class="quick-card-info">
+            <div class="quick-card-title">小又又</div>
+            <div class="quick-card-value" id="homeBabyAge">计算中...</div>
+          </div>
+        </div>
+      </div>
+      <div class="home-section">
+        <div class="home-section-header"><span>📋 今日待办</span><button onclick="navigateTo('calendar')">去日历</button></div>
+        <div class="home-todos-preview" id="homeTodosPreview"><div class="empty-tip">暂无待办～</div></div>
+      </div>
+      <div class="home-section">
+        <div class="home-section-header"><span>🍜 今日推荐</span><button onclick="navigateTo('food')">去换一个</button></div>
+        <div class="home-food-preview" id="homeFoodPreview"><div class="empty-tip">去抽签决定今天吃什么</div></div>
+      </div>
+      <div class="home-section">
+        <div class="home-section-header"><span>👶 小又又状态</span><button onclick="navigateTo('parenting')">详情</button></div>
+        <div class="home-easy-status">
+          <div class="easy-quick-btns">
+            <button class="easy-btn eat"      onclick="quickLog('eat')">🍼 吃奶</button>
+            <button class="easy-btn sleep"    onclick="quickLog('sleep')">😴 睡觉</button>
+            <button class="easy-btn diaper"   onclick="quickLog('diaper')">🚼 尿布</button>
+            <button class="easy-btn activity" onclick="quickLog('activity')">🎮 玩耍</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======== 日历 ======== -->
+    <section id="page-calendar" class="page">
+      <div class="calendar-nav">
+        <button onclick="calendarPrevMonth()">‹</button>
+        <div class="calendar-month-title" id="calendarMonthTitle"></div>
+        <button onclick="calendarNextMonth()">›</button>
+      </div>
+      <div class="weather-strip" id="weatherStrip"></div>
+      <div class="calendar-grid-wrapper">
+        <div class="calendar-weekdays">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+      <div class="day-panel" id="dayPanel" style="display:none">
+        <div class="day-panel-header">
+          <span id="dayPanelTitle"></span>
+          <button onclick="closeDayPanel()">✕</button>
+        </div>
+        <div id="dayWeather"></div>
+        <div class="day-todos">
+          <div class="day-section-title">📋 待办事项</div>
+          <div id="dayTodoList"></div>
+          <div class="add-todo-form">
+            <input type="text" id="newTodoInput" placeholder="添加待办...">
+            <button onclick="addTodo()">添加</button>
+          </div>
+        </div>
+        <div class="day-expenses">
+          <div class="day-section-title">💰 今日消费</div>
+          <div id="dayExpenseList"></div>
+          <div class="add-expense-form">
+            <input type="text" id="newExpenseDesc" placeholder="消费描述">
+            <input type="number" id="newExpenseAmount" placeholder="金额" step="0.01" min="0">
+            <button onclick="addExpense()">记录</button>
+          </div>
+          <div class="day-expense-total" id="dayExpenseTotal"></div>
+        </div>
+      </div>
+      <div class="monthly-summary">
+        <div class="summary-title">📊 本月小结</div>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="summary-label">总消费</div><div class="summary-value" id="monthlyTotal">¥0</div></div>
+          <div class="summary-item"><div class="summary-label">待办完成</div><div class="summary-value" id="monthlyTodos">0/0</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======== 吃什么 ======== -->
+    <section id="page-food" class="page">
+      <div class="food-header">
+        <h2>今天吃什么？</h2>
+        <p class="food-subtitle">陕西 · 新疆 · 中西合璧，让命运选！</p>
+      </div>
+      <div class="category-filter" id="categoryFilter">
+        <button class="cat-btn active" data-cat="all">全部</button>
+        <button class="cat-btn" data-cat="noodle">🍜 面食</button>
+        <button class="cat-btn" data-cat="rice">🍚 米饭</button>
+        <button class="cat-btn" data-cat="western">🥩 西餐</button>
+        <button class="cat-btn" data-cat="fitness">💪 健身餐</button>
+      </div>
+      <div class="food-card-container">
+        <div class="food-card" id="foodCard">
+          <div class="food-card-emoji" id="foodEmoji">🎲</div>
+          <div class="food-card-name" id="foodName">点击抽签！</div>
+          <div class="food-card-category" id="foodCategory"></div>
+          <div class="food-card-desc" id="foodDesc">按下按钮，让命运帮你决定～</div>
+          <div class="food-card-kcal" id="foodKcal"></div>
+          <div class="food-card-meta" id="foodMeta"></div>
+        </div>
+      </div>
+      <!-- 操作按钮行 -->
+      <div class="food-actions">
+        <button class="btn-spin" onclick="spinFood()">🎲 抽签！</button>
+        <button class="btn-topping" id="toppingBtn" onclick="spinTopping()" style="display:none">🍜 配浇头</button>
+        <button class="btn-combo"   id="comboBtn"   onclick="generateRiceCombo()" style="display:none">🍱 随机配菜</button>
+        <button class="btn-confirm" id="confirmBtn" onclick="confirmFood()" style="display:none">✓ 就这个！</button>
+      </div>
+      <div class="food-actions" style="justify-content:center; margin-top:-4px">
+        <button class="btn-tomorrow" id="planTomBtn" onclick="planTomorrow()" style="display:none">📅 计划明天吃这个</button>
+      </div>
+      <div class="meal-type-select" id="mealTypeSelect" style="display:none">
+        <span>添加到：</span>
+        <button onclick="addToMeal('breakfast')">早饭</button>
+        <button onclick="addToMeal('lunch')">午饭</button>
+        <button onclick="addToMeal('dinner')">晚饭</button>
+      </div>
+      <!-- 今日热量汇总 -->
+      <div id="dailyCalEl" class="daily-cal"></div>
+      <!-- 今日食谱 -->
+      <div class="today-meals">
+        <div class="meals-title">今日食谱</div>
+        <div class="meal-slots">
+          <div class="meal-slot"><span class="meal-time">🌅 早饭</span><span class="meal-content" id="breakfastContent">还没决定</span><button class="meal-clear" onclick="clearMeal('breakfast')">✕</button></div>
+          <div class="meal-slot"><span class="meal-time">☀️ 午饭</span><span class="meal-content" id="lunchContent">还没决定</span><button class="meal-clear" onclick="clearMeal('lunch')">✕</button></div>
+          <div class="meal-slot"><span class="meal-time">🌙 晚饭</span><span class="meal-content" id="dinnerContent">还没决定</span><button class="meal-clear" onclick="clearMeal('dinner')">✕</button></div>
+        </div>
+      </div>
+      <div class="weekly-food" id="weeklyFood"></div>
+    </section>
+
+    <!-- ======== 育儿 ======== -->
+    <section id="page-parenting" class="page">
+
+      <!-- 宝宝头部 -->
+      <div class="baby-header">
+        <div class="baby-avatar">👶</div>
+        <div class="baby-info">
+          <div class="baby-name">小又又</div>
+          <div class="baby-age" id="babyAge">计算中...</div>
+          <div class="baby-stage" id="babyStage"></div>
+        </div>
+      </div>
+
+      <!-- 搜索框 -->
+      <div class="parenting-search">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="parentingSearchInput" placeholder="搜索育儿问题，如：哭闹、胀气、奶睡..." oninput="handleParentingSearch(event)">
+          <button class="search-clear" onclick="clearSearch()">✕</button>
+        </div>
+      </div>
+
+      <!-- 搜索结果 -->
+      <div id="searchResults" style="display:none; padding:0 16px"></div>
+
+      <!-- 主内容（搜索时隐藏） -->
+      <div id="parentingMain">
+
+        <!-- 疫苗提醒 -->
+        <div class="parenting-section">
+          <div class="section-title">💉 疫苗提醒</div>
+          <div id="vaccinationAlerts"></div>
+        </div>
+
+        <!-- 年龄阶段提醒 -->
+        <div class="parenting-section">
+          <div class="section-title">🔔 阶段提醒 &amp; 购物清单</div>
+          <div id="ageReminders"></div>
+        </div>
+
+        <!-- EASY 记录 -->
+        <div class="easy-tracker">
+          <div class="easy-title">E.A.S.Y. 今日记录</div>
+          <div class="easy-legend">
+            <span class="legend-item eat">E 吃</span>
+            <span class="legend-item activity">A 玩</span>
+            <span class="legend-item sleep">S 睡</span>
+            <span class="legend-item youtime">Y 你的时光</span>
+          </div>
+          <div class="quick-log-btns">
+            <button class="log-btn eat-btn"      onclick="openLogModal('eat')">🍼<br>记录吃奶</button>
+            <button class="log-btn activity-btn" onclick="openLogModal('activity')">🎮<br>记录玩耍</button>
+            <button class="log-btn sleep-btn"    onclick="openLogModal('sleep')">😴<br>记录睡眠</button>
+            <button class="log-btn diaper-btn"   onclick="openLogModal('diaper')">🚼<br>记录尿布</button>
+          </div>
+          <div class="log-timeline" id="logTimeline"><div class="empty-tip">今日暂无记录</div></div>
+        </div>
+
+        <!-- 今日统计 -->
+        <div class="baby-stats">
+          <div class="stat-item"><span class="stat-icon">🍼</span><span class="stat-label">今日吃奶</span><span class="stat-value" id="statEat">0次</span></div>
+          <div class="stat-item"><span class="stat-icon">😴</span><span class="stat-label">今日睡眠</span><span class="stat-value" id="statSleep">0h</span></div>
+          <div class="stat-item"><span class="stat-icon">🚼</span><span class="stat-label">换尿布</span><span class="stat-value" id="statDiaper">0次</span></div>
+        </div>
+
+        <!-- 季节提醒 -->
+        <div class="parenting-section">
+          <div id="seasonalTips"></div>
+        </div>
+
+        <!-- 里程碑 -->
+        <div class="milestones-section">
+          <div class="section-title">🌟 本阶段发育里程碑</div>
+          <div id="milestonesList" class="milestones-list"></div>
+        </div>
+
+        <!-- EASY 指南 -->
+        <div class="easy-guide">
+          <div class="section-title">📖 E.A.S.Y. 科学育儿法（特雷西·霍格）</div>
+          <div class="easy-guide-content">
+            <div class="easy-step"><div class="step-header eat">🍼 E — 吃 (Eat)</div><div class="step-content" id="easyGuideEat"></div></div>
+            <div class="easy-step"><div class="step-header activity">🎮 A — 玩 (Activity)</div><div class="step-content" id="easyGuideActivity"></div></div>
+            <div class="easy-step"><div class="step-header sleep">😴 S — 睡 (Sleep)</div><div class="step-content" id="easyGuideSleep"></div></div>
+            <div class="easy-step"><div class="step-header youtime">☕ Y — 你的时光</div><div class="step-content" id="easyGuideYou"></div></div>
+          </div>
+        </div>
+
+        <!-- 科学贴士 -->
+        <div class="science-tips">
+          <div class="section-title">💡 今日科学育儿贴士</div>
+          <div id="scienceTips" class="tips-list"></div>
+        </div>
+
+      </div><!-- /parentingMain -->
+
+      <!-- 记录弹窗 -->
+      <div class="modal" id="logModal" style="display:none" onclick="if(event.target===this)closeLogModal()">
+        <div class="modal-content">
+          <div class="modal-header"><span id="modalTitle">记录</span><button onclick="closeLogModal()">✕</button></div>
+          <div class="modal-body" id="modalBody"></div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 底部导航 -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="home"      onclick="navigateTo('home')"><span class="nav-icon">🏠</span><span class="nav-label">首页</span></button>
+    <button class="nav-item" data-page="calendar"         onclick="navigateTo('calendar')"><span class="nav-icon">📅</span><span class="nav-label">日历</span></button>
+    <button class="nav-item" data-page="food"             onclick="navigateTo('food')"><span class="nav-icon">🍜</span><span class="nav-label">吃什么</span></button>
+    <button class="nav-item" data-page="parenting"        onclick="navigateTo('parenting')"><span class="nav-icon">👶</span><span class="nav-label">育儿</span></button>
+  </nav>
+
+  <!-- 家庭码弹窗 -->
+  <div class="modal" id="familyModal" style="display:none" onclick="if(event.target===this)closeFamilyModal()">
+    <div class="modal-content">
+      <div class="modal-header"><span>👨‍👩‍👧 家庭同步</span><button onclick="closeFamilyModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="family-section">
+          <div class="family-label">我的家庭码（分享给老婆）</div>
+          <div class="family-code" id="myFamilyCode">加载中...</div>
+          <button class="btn-copy-code" onclick="copyFamilyCode()">📋 复制家庭码</button>
+        </div>
+        <div class="family-divider">— 或者加入老婆的家庭 —</div>
+        <div class="modal-field">
+          <label>输入家庭码</label>
+          <input type="text" id="joinCodeInput" placeholder="粘贴对方的家庭码">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeFamilyModal()">取消</button>
+          <button class="btn-save" onclick="joinFamily()">加入家庭</button>
+        </div>
+        <div class="family-tip">💡 两个人用同一个家庭码，数据自动同步</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 天气设置弹窗 -->
+  <div class="modal" id="weatherModal" style="display:none" onclick="if(event.target===this)closeWeatherModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>🌤️ 天气设置</span>
+        <button onclick="closeWeatherModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="weather-setup-guide">
+          <div class="setup-step">① 前往 <strong>dev.qweather.com</strong> 注册账号（免费）</div>
+          <div class="setup-step">② 创建应用，复制 API Key</div>
+          <div class="setup-step">③ 填入下方，搜索你的城市</div>
+        </div>
+        <div class="modal-field">
+          <label>API Key（和风天气）</label>
+          <input type="text" id="wApiKeyInput" placeholder="粘贴你的 API Key...">
+        </div>
+        <div class="modal-field">
+          <label>搜索城市</label>
+          <div class="city-search-row">
+            <input type="text" id="wCitySearch" placeholder="输入城市名，如：西安、乌鲁木齐">
+            <button class="btn-search-city" onclick="doSearchCity()">搜索</button>
+          </div>
+          <button class="btn-gps" onclick="doLocateGPS()">📍 GPS 自动定位</button>
+        </div>
+        <div class="w-status-msg" id="wStatusMsg"></div>
+        <div class="city-results" id="wCityResults"></div>
+        <div class="w-city-display" id="wCityDisplay">尚未选择城市</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="scripts/data.js"></script>
+<script src="scripts/supabase-sync.js"></script>
+<script src="scripts/weather.js"></script>
+<script src="scripts/app.js"></script>
+<script src="scripts/calendar.js"></script>
+<script src="scripts/food.js"></script>
+<script src="scripts/parenting.js"></script>
+<script>
+  function clearSearch() {
+    const el = document.getElementById('parentingSearchInput');
+    if (el) el.value = '';
+    searchParenting('');
+  }
+  function copyFamilyCode() {
+    const code = document.getElementById('myFamilyCode').textContent;
+    navigator.clipboard?.writeText(code).then(() => showToast('家庭码已复制 ✓')).catch(() => showToast('请手动复制：' + code));
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initSupabase(); // 先连接 Supabase
+    initApp();
+    // 回车触发日历输入
+    document.getElementById('newTodoInput')?.addEventListener('keydown', e => { if(e.key==='Enter') addTodo(); });
+    document.getElementById('newExpenseAmount')?.addEventListener('keydown', e => { if(e.key==='Enter') addExpense(); });
+    // 回车触发城市搜索
+    document.getElementById('wCitySearch')?.addEventListener('keydown', e => { if(e.key==='Enter') doSearchCity(); });
+  });
+</script>
+</body>
+</html>
