@@ -6,7 +6,7 @@ const QWEATHER_7D  = 'https://devapi.qweather.com/v7/weather/7d';
 const QWEATHER_24H = 'https://devapi.qweather.com/v7/weather/24h';
 
 // 默认配置（已硬编码，无需手动设置）
-const DEFAULT_KEY     = '4c0d8ffede5f4da9923b69455a16cd82';
+const DEFAULT_KEY     = 'de7acc215bf742cb915e5bd8e2101d77';
 const DEFAULT_CITY_ID = '101020100';
 const DEFAULT_CITY    = '上海';
 
