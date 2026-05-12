@@ -486,7 +486,7 @@ function parseDate(str) { const [y,m,d]=str.split('-').map(Number); return new D
 function getToday() { return formatDate(new Date()); }
 function getDayOfWeek(dateStr) { return ['日','一','二','三','四','五','六'][parseDate(dateStr).getDay()]; }
 
-const Store = {
+var Store = {
   get(key, fallback=null) { try { const v=localStorage.getItem('amxm_'+key); return v?JSON.parse(v):fallback; } catch { return fallback; } },
   set(key, value) { try { localStorage.setItem('amxm_'+key, JSON.stringify(value)); } catch {} },
 };

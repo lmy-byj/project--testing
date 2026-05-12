@@ -166,5 +166,5 @@ function joinFamily() {
   }
 }
 
-// 替换默认 Store
-const Store = CloudStore;
+// 替换默认 Store（用赋值而非重新声明，避免与 data.js 的 var Store 冲突）
+Store = CloudStore;

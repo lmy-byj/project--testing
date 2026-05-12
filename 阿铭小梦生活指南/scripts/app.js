@@ -55,6 +55,7 @@ function navigateTo(page) {
 
   // 切换页面时刷新内容
   if (page === 'home') refreshHome();
+  if (page === 'calendar') renderCalendar();
   if (page === 'parenting') refreshParenting();
 }
 

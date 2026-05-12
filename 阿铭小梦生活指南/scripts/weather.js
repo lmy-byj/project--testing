@@ -4,8 +4,46 @@
 // 免费版：1000次/天，够用
 // =============================================
 
-const QWEATHER_GEO   = 'https://geoapi.qweather.com/v2/city/lookup';
 const QWEATHER_7D    = 'https://devapi.qweather.com/v7/weather/7d';
+
+// 内置城市列表（避免 GEO API 的 CORS 问题）
+const CITY_LIST = [
+  { id:'101020100', name:'上海',   adm1:'上海' },
+  { id:'101010100', name:'北京',   adm1:'北京' },
+  { id:'101130101', name:'乌鲁木齐', adm1:'新疆' },
+  { id:'101130301', name:'喀什',   adm1:'新疆' },
+  { id:'101130401', name:'库尔勒', adm1:'新疆' },
+  { id:'101130201', name:'克拉玛依', adm1:'新疆' },
+  { id:'101130601', name:'伊宁',   adm1:'新疆' },
+  { id:'101110101', name:'西安',   adm1:'陕西' },
+  { id:'101110201', name:'宝鸡',   adm1:'陕西' },
+  { id:'101280601', name:'深圳',   adm1:'广东' },
+  { id:'101280101', name:'广州',   adm1:'广东' },
+  { id:'101270101', name:'成都',   adm1:'四川' },
+  { id:'101210101', name:'杭州',   adm1:'浙江' },
+  { id:'101190101', name:'南京',   adm1:'江苏' },
+  { id:'101200101', name:'武汉',   adm1:'湖北' },
+  { id:'101040100', name:'重庆',   adm1:'重庆' },
+  { id:'101030100', name:'天津',   adm1:'天津' },
+  { id:'101050101', name:'哈尔滨', adm1:'黑龙江' },
+  { id:'101060101', name:'长春',   adm1:'吉林' },
+  { id:'101070101', name:'沈阳',   adm1:'辽宁' },
+  { id:'101160101', name:'兰州',   adm1:'甘肃' },
+  { id:'101150101', name:'西宁',   adm1:'青海' },
+  { id:'101140101', name:'银川',   adm1:'宁夏' },
+  { id:'101120101', name:'郑州',   adm1:'河南' },
+  { id:'101090101', name:'石家庄', adm1:'河北' },
+  { id:'101100101', name:'太原',   adm1:'山西' },
+  { id:'101080101', name:'呼和浩特', adm1:'内蒙古' },
+  { id:'101230101', name:'福州',   adm1:'福建' },
+  { id:'101240101', name:'南昌',   adm1:'江西' },
+  { id:'101250101', name:'长沙',   adm1:'湖南' },
+  { id:'101300101', name:'南宁',   adm1:'广西' },
+  { id:'101310101', name:'海口',   adm1:'海南' },
+  { id:'101320101', name:'贵阳',   adm1:'贵州' },
+  { id:'101290101', name:'昆明',   adm1:'云南' },
+  { id:'101170101', name:'西藏',   adm1:'西藏' },
+];
 const WEATHER_TTL    = 30 * 60 * 1000; // 30分钟缓存
 
 // QWeather 图标code → emoji
@@ -72,31 +110,18 @@ async function loadWeather(s) {
   }
 }
 
-// ---- 城市搜索 ----
-async function searchCity(cityName, apiKey) {
-  const url = `${QWEATHER_GEO}?location=${encodeURIComponent(cityName)}&key=${apiKey}&lang=zh&number=5`;
-  const res = await fetch(url);
-  const json = await res.json();
-  if (json.code === '401') throw new Error('API Key 无效，请检查');
-  if (json.code !== '200' || !json.location?.length) throw new Error('未找到该城市，换个关键字试试');
-  return json.location;
+// ---- 城市搜索（本地匹配，避免 GEO API CORS 问题）----
+function searchCity(cityName) {
+  const kw = cityName.trim();
+  if (!kw) throw new Error('请输入城市名');
+  const results = CITY_LIST.filter(c => c.name.includes(kw) || c.adm1.includes(kw));
+  if (!results.length) throw new Error('未找到该城市，换个关键字试试（如：上海、乌鲁木齐）');
+  return results;
 }
 
-// ---- GPS 定位 ----
+// ---- GPS 定位（不可用，改为提示手动选城市）----
 function locateGPS(apiKey) {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) { reject(new Error('浏览器不支持定位功能')); return; }
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      const url = `${QWEATHER_GEO}?location=${lng.toFixed(4)},${lat.toFixed(4)}&key=${apiKey}&lang=zh`;
-      try {
-        const res = await fetch(url);
-        const json = await res.json();
-        if (json.code === '200' && json.location?.length) resolve(json.location[0]);
-        else reject(new Error('定位解析失败，请手动输入城市'));
-      } catch(e) { reject(e); }
-    }, () => reject(new Error('定位被拒绝，请手动输入城市')), { timeout:8000 });
-  });
+  return Promise.reject(new Error('GPS定位暂不支持，请手动搜索城市名'));
 }
 
 // ---- 天气设置弹窗 ----
@@ -127,7 +152,7 @@ async function doSearchCity() {
   statusEl.textContent = '🔍 搜索中...';
   resultsEl.innerHTML = '';
   try {
-    const cities = await searchCity(cityName, key);
+    const cities = searchCity(cityName);
     statusEl.textContent = `找到 ${cities.length} 个结果，选择你的城市：`;
     resultsEl.innerHTML = cities.map((c,i) => `
       <div class="city-result-item" onclick="selectCity(${i})">

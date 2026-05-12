@@ -15,6 +15,7 @@ function initCalendar() {
 
 // ---- 渲染日历 ----
 function renderCalendar() {
+  if (calYear === undefined) { initCalendar(); return; }
   const titleEl = document.getElementById('calendarMonthTitle');
   titleEl.textContent = `${calYear}年 ${calMonth + 1}月`;
 
