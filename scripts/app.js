@@ -6,6 +6,7 @@ let currentPage = 'home';
 let weatherCache = null;
 
 function initApp() {
+  initDarkMode();
   updateHeaderDate();
   initSettings();
   initHome();
@@ -75,7 +76,9 @@ function refreshHome() {
   updateHeaderDate();
   renderHomeBabyAge();
   renderHomeWeather();
+  renderAnniversaryList();
   renderHomeTodosPreview();
+  renderNotesBoard();
   renderHomeFoodPreview();
   renderShoppingList();
 }
@@ -225,4 +228,253 @@ function showToast(msg) {
   if (!t) { t = document.createElement('div'); t.id='appToast'; t.className='app-toast'; document.querySelector('.app-shell').appendChild(t); }
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// =============================================
+// 深色模式
+// =============================================
+function initDarkMode() {
+  const dark = Store.get('darkMode', false);
+  if (dark) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    const btn = document.getElementById('darkModeBtn');
+    if (btn) btn.textContent = '☀️';
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const btn = document.getElementById('darkModeBtn');
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    Store.set('darkMode', false);
+    if (btn) btn.textContent = '🌙';
+    showToast('已切换为浅色模式');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    Store.set('darkMode', true);
+    if (btn) btn.textContent = '☀️';
+    showToast('已切换为深色模式');
+  }
+}
+
+// =============================================
+// 纪念日
+// =============================================
+const DEFAULT_ANNIVERSARIES = [
+  { id:'a_wedding', name:'结婚纪念日', date:'2024-10-01', type:'yearly', emoji:'💍' },
+  { id:'a_baby', name:'小又又生日', date:'2026-04-08', type:'yearly', emoji:'🎂' },
+];
+
+function getAnniversaries() {
+  return Store.get('anniversaries', DEFAULT_ANNIVERSARIES);
+}
+
+function renderAnniversaryList() {
+  const el = document.getElementById('anniversaryList');
+  if (!el) return;
+  const list = getAnniversaries();
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const items = list.map(a => {
+    const raw = parseDate(a.date);
+    let next = new Date(today.getFullYear(), raw.getMonth(), raw.getDate());
+    if (a.type === 'yearly') {
+      if (next < today) next.setFullYear(next.getFullYear() + 1);
+    } else {
+      next = new Date(raw);
+    }
+    const diff = Math.round((next - today) / 86400000);
+    return { ...a, diff, next };
+  }).filter(a => a.diff >= 0 && a.diff <= 60)
+    .sort((x, y) => x.diff - y.diff);
+
+  if (!items.length) {
+    el.innerHTML = '<div class="empty-tip">最近60天内无纪念日 🎈</div>';
+    return;
+  }
+  el.innerHTML = items.map(a => {
+    const countdownClass = a.diff === 0 ? 'anniv-countdown today' : 'anniv-countdown';
+    const countdownText = a.diff === 0 ? '🎉 今天！' : `还有 ${a.diff} 天`;
+    return `<div class="anniversary-item">
+      <span class="anniv-icon">${a.emoji || '🎂'}</span>
+      <div class="anniv-info">
+        <div class="anniv-name">${a.name}</div>
+        <div class="anniv-date-str">${a.date}${a.type === 'yearly' ? '（每年）' : ''}</div>
+      </div>
+      <span class="${countdownClass}">${countdownText}</span>
+    </div>`;
+  }).join('');
+}
+
+function openAnniversaryModal() {
+  const modal = document.getElementById('anniversaryModal');
+  if (modal) { modal.style.display = 'flex'; renderAnniversaryEditList(); }
+}
+
+function closeAnniversaryModal() {
+  const modal = document.getElementById('anniversaryModal');
+  if (modal) modal.style.display = 'none';
+  renderAnniversaryList();
+}
+
+function renderAnniversaryEditList() {
+  const el = document.getElementById('anniversaryEditList');
+  if (!el) return;
+  const list = getAnniversaries();
+  if (!list.length) { el.innerHTML = '<div class="empty-tip" style="padding:8px 0">暂无纪念日</div>'; return; }
+  el.innerHTML = list.map((a, i) => `
+    <div class="anniversary-edit-item">
+      <span>${a.emoji || '🎂'}</span>
+      <div class="anniv-edit-info">
+        <div>${a.name}</div>
+        <div style="color:var(--text-light);font-size:11px">${a.date} · ${a.type === 'yearly' ? '每年' : '仅一次'}</div>
+      </div>
+      <button class="anniv-delete" onclick="deleteAnniversary(${i})">🗑️</button>
+    </div>
+  `).join('');
+}
+
+function addAnniversary() {
+  const name = document.getElementById('annivNameInput')?.value.trim();
+  const date = document.getElementById('annivDateInput')?.value;
+  const type = document.getElementById('annivTypeInput')?.value || 'yearly';
+  if (!name || !date) { showToast('请填写名称和日期'); return; }
+  const list = getAnniversaries();
+  const emojis = { '生日': '🎂', '纪念': '💍', '婚': '💍', '宝宝': '👶', '妈': '💗', '爸': '💪', '旅': '✈️' };
+  let emoji = '🎉';
+  for (const [k, v] of Object.entries(emojis)) {
+    if (name.includes(k)) { emoji = v; break; }
+  }
+  list.push({ id: 'a_' + Date.now(), name, date, type, emoji });
+  Store.set('anniversaries', list);
+  document.getElementById('annivNameInput').value = '';
+  document.getElementById('annivDateInput').value = '';
+  renderAnniversaryEditList();
+  showToast('纪念日已添加 ✓');
+}
+
+function deleteAnniversary(index) {
+  const list = getAnniversaries();
+  list.splice(index, 1);
+  Store.set('anniversaries', list);
+  renderAnniversaryEditList();
+  showToast('已删除');
+}
+
+// =============================================
+// 便签板
+// =============================================
+const NOTE_COLORS = {
+  yellow: '#FFE066', pink: '#FFB3C6', blue: '#A0D2EB',
+  green: '#B5EAD7', orange: '#FFDAB3'
+};
+let currentNoteColor = 'yellow';
+let editingNoteId = null;
+
+function renderNotesBoard() {
+  const el = document.getElementById('notesBoard');
+  if (!el) return;
+  const notes = Store.get('notes', []);
+  if (!notes.length) {
+    el.innerHTML = '<div class="empty-tip">点击「新便签」记录灵感、留言～</div>';
+    return;
+  }
+  el.innerHTML = notes.map(n => `
+    <div class="note-card" style="background:${NOTE_COLORS[n.color] || NOTE_COLORS.yellow}">
+      <div class="note-card-text">${escapeHtml(n.text)}</div>
+      <div class="note-card-time">${n.time || ''}</div>
+      <div class="note-card-actions">
+        <button class="note-card-edit" onclick="editNote('${n.id}')">编辑</button>
+        <button class="note-card-del" onclick="deleteNote('${n.id}')">删除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function addNote() {
+  editingNoteId = null;
+  currentNoteColor = 'yellow';
+  document.getElementById('noteContentInput').value = '';
+  document.getElementById('noteModalTitle').textContent = '📝 新便签';
+  document.querySelectorAll('.note-color-dot').forEach(d => d.classList.toggle('active', d.dataset.color === 'yellow'));
+  const modal = document.getElementById('noteModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function editNote(id) {
+  const notes = Store.get('notes', []);
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  editingNoteId = id;
+  currentNoteColor = note.color || 'yellow';
+  document.getElementById('noteContentInput').value = note.text;
+  document.getElementById('noteModalTitle').textContent = '📝 编辑便签';
+  document.querySelectorAll('.note-color-dot').forEach(d => d.classList.toggle('active', d.dataset.color === currentNoteColor));
+  const modal = document.getElementById('noteModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeNoteModal() {
+  const modal = document.getElementById('noteModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function selectNoteColor(el) {
+  currentNoteColor = el.dataset.color;
+  document.querySelectorAll('.note-color-dot').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function saveNote() {
+  const text = document.getElementById('noteContentInput')?.value.trim();
+  if (!text) { showToast('请输入便签内容'); return; }
+  const notes = Store.get('notes', []);
+  const now = new Date();
+  const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if (editingNoteId) {
+    const idx = notes.findIndex(n => n.id === editingNoteId);
+    if (idx >= 0) { notes[idx].text = text; notes[idx].color = currentNoteColor; notes[idx].time = timeStr; }
+  } else {
+    notes.unshift({ id: 'n_' + Date.now(), text, color: currentNoteColor, time: timeStr });
+  }
+  Store.set('notes', notes);
+  closeNoteModal();
+  renderNotesBoard();
+  showToast(editingNoteId ? '便签已更新 ✓' : '便签已保存 ✓');
+}
+
+function deleteNote(id) {
+  const notes = Store.get('notes', []).filter(n => n.id !== id);
+  Store.set('notes', notes);
+  renderNotesBoard();
+  showToast('便签已删除');
+}
+
+// =============================================
+// 数据导出
+// =============================================
+function exportData() {
+  const keys = ['shoppingList','todos','expenses','mealLog','babyLog','growthRecords',
+    'vacStatus','notes','anniversaries','settings','weatherSettings'];
+  const data = {};
+  keys.forEach(k => {
+    const v = Store.get(k, null);
+    if (v !== null) data[k] = v;
+  });
+  data._exportTime = new Date().toISOString();
+  data._version = '1.0';
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `阿铭小梦生活数据_${getToday()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('数据已导出 📤');
 }

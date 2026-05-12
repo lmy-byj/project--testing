@@ -1027,3 +1027,162 @@ a { text-decoration: none; color: inherit; }
 .vac-info { flex:1; min-width:160px; color:var(--text); }
 .vac-date { width:100%; font-size:10px; color:var(--success); padding-left:4px; }
 
+/* ========================
+   深色模式
+   ======================== */
+[data-theme="dark"] {
+  --bg: #1A1210;
+  --bg-card: #2A1F1C;
+  --bg-tint: #331F17;
+  --text: #F2DFD5;
+  --text-mid: #C4998A;
+  --text-light: #8A6355;
+  --border: #4A2E23;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 14px rgba(0,0,0,.4);
+  --shadow-lg: 0 8px 28px rgba(0,0,0,.5);
+}
+html[data-theme="dark"],
+html[data-theme="dark"] body { background: #111; }
+[data-theme="dark"] .app-shell { background: var(--bg); }
+[data-theme="dark"] .app-header { background: var(--bg-card); border-bottom:1px solid var(--border); }
+[data-theme="dark"] .bottom-nav { background: var(--bg-card); border-top:1px solid var(--border); }
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background: var(--bg-tint) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .modal-content { background: var(--bg-card); color: var(--text); }
+[data-theme="dark"] .food-card { background: var(--bg-card); }
+[data-theme="dark"] .calendar-day { background: var(--bg-card); }
+[data-theme="dark"] .calendar-day.today { background: #3D1F15; }
+[data-theme="dark"] .home-section,
+[data-theme="dark"] .quick-card,
+[data-theme="dark"] .parenting-section,
+[data-theme="dark"] .easy-tracker,
+[data-theme="dark"] .baby-stats,
+[data-theme="dark"] .milestones-section,
+[data-theme="dark"] .easy-guide,
+[data-theme="dark"] .science-tips,
+[data-theme="dark"] .day-panel,
+[data-theme="dark"] .monthly-summary { background: var(--bg-card) !important; }
+[data-theme="dark"] .home-hero { background: linear-gradient(135deg, #3D1F15 0%, #2A1510 100%); }
+[data-theme="dark"] .weather-strip { background: var(--bg-tint); }
+[data-theme="dark"] .timer-card { background: var(--bg-card); }
+[data-theme="dark"] .note-card { background: #2D2012 !important; border-color: var(--border) !important; }
+
+/* ========================
+   纪念日
+   ======================== */
+.anniversary-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 0; border-bottom:1px solid var(--border);
+}
+.anniversary-item:last-child { border-bottom:none; }
+.anniv-icon { font-size:22px; flex-shrink:0; }
+.anniv-info { flex:1; }
+.anniv-name { font-size:14px; font-weight:600; color:var(--text); }
+.anniv-date-str { font-size:12px; color:var(--text-light); margin-top:2px; }
+.anniv-countdown {
+  font-size:13px; font-weight:700; padding:3px 9px; border-radius:20px;
+  background:var(--bg-tint); color:var(--primary);
+}
+.anniv-countdown.today { background:#FFF0EB; color:#C4542D; animation:pulse .8s infinite alternate; }
+.anniv-delete { font-size:16px; color:var(--text-light); padding:4px; }
+.anniversary-edit-item {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;
+}
+.anniversary-edit-item:last-child { border-bottom:none; }
+.anniv-edit-info { flex:1; }
+
+/* ========================
+   便签板
+   ======================== */
+.notes-board {
+  display:flex; flex-wrap:wrap; gap:10px; padding-top:4px;
+}
+.note-card {
+  flex:1; min-width:130px; max-width:calc(50% - 5px);
+  border-radius:10px; padding:10px 12px;
+  border:1px solid rgba(0,0,0,.08);
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+  position:relative; word-break:break-word;
+  font-size:13px; color:#333; line-height:1.5;
+  min-height:80px;
+}
+.note-card-text { white-space:pre-wrap; }
+.note-card-time { font-size:10px; color:rgba(0,0,0,.35); margin-top:6px; }
+.note-card-actions { display:flex; gap:4px; margin-top:6px; }
+.note-card-edit { font-size:12px; padding:2px 8px; background:rgba(0,0,0,.06); border-radius:10px; }
+.note-card-del { font-size:12px; padding:2px 8px; background:rgba(0,0,0,.06); border-radius:10px; color:var(--danger); }
+.note-color-picker { display:flex; gap:10px; margin-bottom:12px; }
+.note-color-dot {
+  width:26px; height:26px; border-radius:50%; cursor:pointer;
+  border:2px solid transparent; transition:border-color .15s;
+  display:block;
+}
+.note-color-dot.active { border-color:#555; }
+
+/* ========================
+   计时器
+   ======================== */
+.baby-header-btns { display:flex; flex-direction:column; gap:6px; }
+.btn-timer-open {
+  background:var(--secondary-light); color:white; border-radius:20px;
+  padding:6px 12px; font-size:12px; font-weight:600; white-space:nowrap;
+}
+.timer-card {
+  background:var(--bg-card); border-radius:var(--r-md);
+  box-shadow:var(--shadow-md); margin:0 16px 16px;
+  padding:16px; text-align:center;
+}
+.timer-type-row { display:flex; gap:8px; justify-content:center; margin-bottom:16px; }
+.timer-type-btn {
+  padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600;
+  border:1.5px solid var(--border); background:var(--bg-tint); color:var(--text-mid);
+  transition:all .15s;
+}
+.timer-type-btn.active {
+  background:var(--primary); color:white; border-color:var(--primary);
+}
+.timer-display {
+  font-size:48px; font-weight:800; letter-spacing:4px;
+  color:var(--primary); margin:8px 0 16px; font-variant-numeric:tabular-nums;
+}
+.timer-btns { display:flex; gap:12px; justify-content:center; margin-bottom:12px; }
+.timer-btn-start {
+  background:var(--primary); color:white; border-radius:24px;
+  padding:10px 28px; font-size:15px; font-weight:700;
+}
+.timer-btn-start.running { background:var(--danger); }
+.timer-btn-reset {
+  background:var(--bg-tint); color:var(--text-mid); border-radius:24px;
+  padding:10px 20px; font-size:15px; font-weight:700;
+  border:1.5px solid var(--border);
+}
+.timer-btn-save {
+  background:var(--success); color:white; border-radius:24px;
+  padding:10px 20px; font-size:14px; font-weight:700;
+}
+.timer-history { text-align:left; border-top:1px solid var(--border); padding-top:10px; margin-top:4px; }
+.timer-history-title { font-size:12px; color:var(--text-light); margin-bottom:6px; }
+.timer-history-item {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:12px; padding:4px 0; border-bottom:1px solid var(--border);
+}
+.timer-history-item:last-child { border-bottom:none; }
+.timer-history-type { font-weight:600; }
+.timer-history-dur { color:var(--primary); font-weight:700; }
+.timer-history-time { color:var(--text-light); }
+
+/* ========================
+   数据导出按钮辅助
+   ======================== */
+@keyframes pulse {
+  from { transform:scale(1); }
+  to { transform:scale(1.05); }
+}
+

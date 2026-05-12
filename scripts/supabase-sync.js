@@ -128,6 +128,15 @@ function onCloudDataUpdated(key) {
     if (key === 'growthRecords') {
       if (typeof renderGrowthRecords === 'function') renderGrowthRecords();
     }
+    if (key === 'notes') {
+      if (typeof renderNotesBoard === 'function') renderNotesBoard();
+    }
+    if (key === 'anniversaries') {
+      if (typeof renderAnniversaryList === 'function') renderAnniversaryList();
+    }
+    if (key === 'timerHistory') {
+      if (typeof renderTimerHistory === 'function') renderTimerHistory();
+    }
   } catch(e) {}
 }
 

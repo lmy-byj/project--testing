@@ -1,9 +1,116 @@
 // =============================================
-// 育儿模块 v2 — 含搜索/疫苗/年龄提醒
+// 育儿模块 v2 — 含搜索/疫苗/年龄提醒/计时器
 // =============================================
 
 let logModalType = null;
 let searchDebounce = null;
+
+// =============================================
+// 计时器
+// =============================================
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+let timerType = 'eat';
+let timerStartTime = null;
+
+function openTimerModal() {
+  const card = document.getElementById('timerCard');
+  if (!card) return;
+  card.style.display = card.style.display === 'none' ? 'block' : 'none';
+  if (card.style.display === 'block') {
+    renderTimerHistory();
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function setTimerType(el, type) {
+  timerType = type;
+  document.querySelectorAll('.timer-type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleTimer() {
+  const btn = document.getElementById('timerStartBtn');
+  const saveBtn = document.getElementById('timerSaveBtn');
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    if (btn) { btn.textContent = '▶ 继续'; btn.classList.remove('running'); }
+    if (saveBtn) saveBtn.style.display = 'inline-block';
+  } else {
+    if (!timerStartTime) timerStartTime = new Date();
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      updateTimerDisplay();
+    }, 1000);
+    timerRunning = true;
+    if (btn) { btn.textContent = '⏸ 暂停'; btn.classList.add('running'); }
+    if (saveBtn) saveBtn.style.display = 'none';
+  }
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  if (!el) return;
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 0;
+  timerStartTime = null;
+  const btn = document.getElementById('timerStartBtn');
+  const saveBtn = document.getElementById('timerSaveBtn');
+  if (btn) { btn.textContent = '▶ 开始'; btn.classList.remove('running'); }
+  if (saveBtn) saveBtn.style.display = 'none';
+  updateTimerDisplay();
+}
+
+function saveTimerRecord() {
+  if (timerSeconds < 5) { showToast('计时太短，不记录'); return; }
+  const typeLabels = { eat: '🍼 吃奶', sleep: '😴 睡觉', activity: '🎮 玩耍' };
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const today = getToday();
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  const durStr = m > 0 ? `${m}分${s}秒` : `${s}秒`;
+
+  const history = Store.get('timerHistory', []);
+  history.unshift({ id: Date.now(), type: timerType, label: typeLabels[timerType], duration: timerSeconds, durStr, time: timeStr, date: today });
+  if (history.length > 50) history.length = 50;
+  Store.set('timerHistory', history);
+
+  let logs = Store.get('babyLog', {});
+  if (!logs[today]) logs[today] = [];
+  logs[today].push({ type: timerType, label: `${typeLabels[timerType]}（${durStr}）`, time: timeStr, id: Date.now() });
+  Store.set('babyLog', logs);
+
+  showToast(`已记录 ${typeLabels[timerType]} ${durStr} ✓`);
+  resetTimer();
+  renderTimerHistory();
+  renderTodayLog();
+  renderBabyStats();
+}
+
+function renderTimerHistory() {
+  const el = document.getElementById('timerHistory');
+  if (!el) return;
+  const history = Store.get('timerHistory', []).slice(0, 8);
+  if (!history.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="timer-history-title">最近记录</div>` +
+    history.map(h => `
+      <div class="timer-history-item">
+        <span class="timer-history-type">${h.label}</span>
+        <span class="timer-history-dur">${h.durStr}</span>
+        <span class="timer-history-time">${h.date === getToday() ? h.time : h.date + ' ' + h.time}</span>
+      </div>
+    `).join('');
+}
 
 function initParenting() { refreshParenting(); }
 

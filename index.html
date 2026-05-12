@@ -21,6 +21,8 @@
     <div class="header-title">🏠 阿铭小梦的生活指南</div>
     <div class="header-right">
       <div class="header-date" id="headerDate"></div>
+      <button class="header-settings-btn" onclick="toggleDarkMode()" id="darkModeBtn" title="深色模式">🌙</button>
+      <button class="header-settings-btn" onclick="exportData()" title="导出数据">📤</button>
       <button class="header-settings-btn" onclick="openWeatherSettings()" title="天气设置">⚙️</button>
       <button class="header-settings-btn" onclick="openFamilyModal()" title="家庭同步">👨‍👩‍👧</button>
     </div>
@@ -51,6 +53,12 @@
         </div>
       </div>
 
+      <!-- 纪念日提醒 -->
+      <div class="home-section" id="anniversarySection">
+        <div class="home-section-header"><span>🎂 纪念日</span><button onclick="openAnniversaryModal()">管理</button></div>
+        <div id="anniversaryList"><div class="empty-tip">添加纪念日，提前提醒你～</div></div>
+      </div>
+
       <!-- 今日待办 -->
       <div class="home-section">
         <div class="home-section-header"><span>📋 今日待办</span><button onclick="navigateTo('calendar')">去日历</button></div>
@@ -67,6 +75,12 @@
             <button onclick="addShoppingItem()">添加</button>
           </div>
         </div>
+      </div>
+
+      <!-- 便签留言板 -->
+      <div class="home-section">
+        <div class="home-section-header"><span>📝 便签板</span><button onclick="addNote()">新便签</button></div>
+        <div class="notes-board" id="notesBoard"><div class="empty-tip">点击「新便签」记录灵感、留言～</div></div>
       </div>
 
       <!-- 今日推荐 -->
@@ -227,7 +241,26 @@
           <div class="baby-age" id="babyAge">计算中...</div>
           <div class="baby-stage" id="babyStage"></div>
         </div>
-        <button class="btn-growth-record" onclick="openGrowthModal()">📏 记录生长</button>
+        <div class="baby-header-btns">
+          <button class="btn-growth-record" onclick="openGrowthModal()">📏 生长</button>
+          <button class="btn-timer-open" onclick="openTimerModal()">⏱️ 计时</button>
+        </div>
+      </div>
+
+      <!-- 计时器 -->
+      <div class="timer-card" id="timerCard" style="display:none">
+        <div class="timer-type-row">
+          <button class="timer-type-btn active" data-type="eat" onclick="setTimerType(this,'eat')">🍼 吃奶</button>
+          <button class="timer-type-btn" data-type="sleep" onclick="setTimerType(this,'sleep')">😴 睡觉</button>
+          <button class="timer-type-btn" data-type="activity" onclick="setTimerType(this,'activity')">🎮 玩耍</button>
+        </div>
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="timer-btns">
+          <button class="timer-btn-start" id="timerStartBtn" onclick="toggleTimer()">▶ 开始</button>
+          <button class="timer-btn-reset" onclick="resetTimer()">↺ 重置</button>
+          <button class="timer-btn-save" id="timerSaveBtn" onclick="saveTimerRecord()" style="display:none">✓ 保存记录</button>
+        </div>
+        <div class="timer-history" id="timerHistory"></div>
       </div>
 
       <!-- 生长记录 -->
@@ -373,6 +406,50 @@
     <button class="nav-item" data-page="parenting"        onclick="navigateTo('parenting')"><span class="nav-icon">👶</span><span class="nav-label">育儿</span></button>
   </nav>
 
+  <!-- 纪念日管理弹窗 -->
+  <div class="modal" id="anniversaryModal" style="display:none" onclick="if(event.target===this)closeAnniversaryModal()">
+    <div class="modal-content">
+      <div class="modal-header"><span>🎂 纪念日管理</span><button onclick="closeAnniversaryModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="anniversary-list" id="anniversaryEditList"></div>
+        <div class="modal-field"><label>名称</label><input type="text" id="annivNameInput" placeholder="如：结婚纪念日、小又又百天"></div>
+        <div class="modal-field"><label>日期</label><input type="date" id="annivDateInput"></div>
+        <div class="modal-field">
+          <label>类型</label>
+          <select id="annivTypeInput">
+            <option value="yearly">每年重复</option>
+            <option value="once">仅一次</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeAnniversaryModal()">关闭</button>
+          <button class="btn-save" onclick="addAnniversary()">添加纪念日</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 便签编辑弹窗 -->
+  <div class="modal" id="noteModal" style="display:none" onclick="if(event.target===this)closeNoteModal()">
+    <div class="modal-content">
+      <div class="modal-header"><span id="noteModalTitle">📝 新便签</span><button onclick="closeNoteModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="note-color-picker">
+          <span class="note-color-dot active" data-color="yellow" onclick="selectNoteColor(this)" style="background:#FFE066"></span>
+          <span class="note-color-dot" data-color="pink" onclick="selectNoteColor(this)" style="background:#FFB3C6"></span>
+          <span class="note-color-dot" data-color="blue" onclick="selectNoteColor(this)" style="background:#A0D2EB"></span>
+          <span class="note-color-dot" data-color="green" onclick="selectNoteColor(this)" style="background:#B5EAD7"></span>
+          <span class="note-color-dot" data-color="orange" onclick="selectNoteColor(this)" style="background:#FFDAB3"></span>
+        </div>
+        <textarea id="noteContentInput" placeholder="写下任何内容..." rows="5" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:15px;resize:vertical;background:var(--bg-card);color:var(--text)"></textarea>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeNoteModal()">取消</button>
+          <button class="btn-save" onclick="saveNote()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 家庭码弹窗 -->
   <div class="modal" id="familyModal" style="display:none" onclick="if(event.target===this)closeFamilyModal()">
     <div class="modal-content">
@@ -454,6 +531,7 @@
     document.getElementById('newExpenseAmount')?.addEventListener('keydown', e => { if(e.key==='Enter') addExpense(); });
     document.getElementById('newShoppingInput')?.addEventListener('keydown', e => { if(e.key==='Enter') addShoppingItem(); });
     document.getElementById('wCitySearch')?.addEventListener('keydown', e => { if(e.key==='Enter') doSearchCity(); });
+    document.getElementById('annivNameInput')?.addEventListener('keydown', e => { if(e.key==='Enter') addAnniversary(); });
   });
 </script>
 </body>
