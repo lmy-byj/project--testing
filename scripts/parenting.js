@@ -13,6 +13,7 @@ function refreshParenting() {
   renderBabyStats();
   renderCurrentStageContent();
   renderVaccinationAlerts();
+  renderFullVaccineList();
   renderAgeReminders();
   renderSeasonalTips();
   renderScienceTips();
@@ -110,7 +111,16 @@ function renderCurrentStageContent() {
   });
 }
 
-// ---- 疫苗提醒 ----
+// ---- 疫苗提醒（含接种状态）----
+function getVacStatus() { return Store.get('vacStatus', {}); }
+function setVacStatus(abbr, done, date) {
+  const st = getVacStatus();
+  st[abbr] = { done, date: date || getToday() };
+  Store.set('vacStatus', st);
+  renderVaccinationAlerts();
+  renderFullVaccineList();
+}
+
 function renderVaccinationAlerts() {
   const container = document.getElementById('vaccinationAlerts');
   if (!container) return;
@@ -118,6 +128,7 @@ function renderVaccinationAlerts() {
   const birth = parseDate(s.babyBirthDate || '2026-04-08');
   const today = new Date();
   const totalDays = Math.floor((today - birth) / 86400000);
+  const st = getVacStatus();
 
   const upcoming = [];
   const past = [];
@@ -132,29 +143,78 @@ function renderVaccinationAlerts() {
     return;
   }
 
+  const renderVac = (v) => {
+    const status = st[v.abbr];
+    const isDone = status?.done;
+    const typeLabel = v.type === 'national'
+      ? '<span class="vac-note free-vac">免费</span>'
+      : '<span class="vac-note paid-vac">自费</span>';
+    const icon = v.type === 'national' ? '💉' : '💊';
+    const statusBtn = `<button class="vac-status-btn ${isDone ? 'done' : ''}" onclick="toggleVacStatus('${v.abbr}', ${!isDone})">${isDone ? '✅ 已打' : '⭕ 未打'}</button>`;
+    const dateHint = isDone && status.date ? `<span class="vac-date">${status.date}</span>` : '';
+    return `<div class="vaccine-item ${isDone ? 'vac-done' : ''}">
+      ${icon} ${v.name} ${v.dose} ${typeLabel}
+      ${v.note ? `<span class="vac-note">${v.note}</span>` : ''}
+      <div class="vac-status-row">${statusBtn}${dateHint}</div>
+    </div>`;
+  };
+
   const renderSlot = (slot, type) => {
     const color = type === 'due' ? '#E05555' : type === 'soon' ? '#F5A623' : '#4CAF7D';
     const label = slot.diff === 0 ? '今天！' : slot.diff > 0 ? `${slot.diff}天后` : `${-slot.diff}天前`;
-    const national = slot.vaccines.filter(v => v.type === 'national');
-    const optional = slot.vaccines.filter(v => v.type === 'optional' || v.type === 'recommended');
     return `
       <div class="vaccine-slot" style="border-left-color:${color}">
         <div class="vaccine-age">${slot.ageLabel} <span class="vaccine-when" style="color:${color}">${label}</span></div>
-        ${national.map(v => `<div class="vaccine-item national">💉 ${v.name} ${v.dose}<span class="vac-note free-vac">免费</span>${v.note?`<span class="vac-note">${v.note}</span>`:''}</div>`).join('')}
-        ${optional.map(v => `<div class="vaccine-item recommended">💊 ${v.name} ${v.dose}<span class="vac-note paid-vac">自费</span>${v.note?`<span class="vac-note">${v.note}</span>`:''}</div>`).join('')}
+        ${slot.vaccines.map(renderVac).join('')}
       </div>`;
   };
 
   let html = '';
   if (upcoming.length) {
     html += '<div class="vac-group-title">⚠️ 近期疫苗</div>';
-    upcoming.forEach(s => html += renderSlot(s, s.diff <= 7 ? 'due' : 'soon'));
+    upcoming.forEach(slot => html += renderSlot(slot, slot.diff <= 7 ? 'due' : 'soon'));
   }
   if (past.length) {
-    html += '<div class="vac-group-title">✅ 近期已过（请确认是否已打）</div>';
-    past.forEach(s => html += renderSlot(s, 'done'));
+    html += '<div class="vac-group-title">📅 近期已过（请确认是否已打）</div>';
+    past.forEach(slot => html += renderSlot(slot, 'done'));
   }
   container.innerHTML = html;
+}
+
+function toggleVacStatus(abbr, done) {
+  setVacStatus(abbr, done, getToday());
+  showToast(done ? '已标记为已接种 ✓' : '已标记为未接种');
+}
+
+// 全部疫苗列表
+function renderFullVaccineList() {
+  const el = document.getElementById('fullVaccineList');
+  if (!el) return;
+  const st = getVacStatus();
+  const s = Store.get('settings', {});
+  const birth = parseDate(s.babyBirthDate || '2026-04-08');
+  const today = new Date();
+  const totalDays = Math.floor((today - birth) / 86400000);
+
+  el.innerHTML = VACCINATION_SCHEDULE.map(slot => {
+    const isPast = slot.ageDays < totalDays - 7;
+    return `
+      <div class="vaccine-full-slot">
+        <div class="vaccine-full-age">${slot.ageLabel}</div>
+        ${slot.vaccines.map(v => {
+          const status = st[v.abbr];
+          const isDone = status?.done;
+          const typeLabel = v.type === 'national'
+            ? '<span class="vac-note free-vac">免费</span>'
+            : '<span class="vac-note paid-vac">自费</span>';
+          return `<div class="vaccine-full-item ${isDone ? 'vac-done' : ''} ${isPast && !isDone ? 'vac-overdue' : ''}">
+            <div class="vac-info">${v.type === 'national' ? '💉' : '💊'} ${v.name} ${v.dose} ${typeLabel}</div>
+            <button class="vac-status-btn ${isDone ? 'done' : ''}" onclick="toggleVacStatus('${v.abbr}', ${!isDone})">${isDone ? '✅ 已打' : '⭕ 未打'}</button>
+            ${isDone && status.date ? `<div class="vac-date">接种：${status.date}</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
 }
 
 // ---- 年龄阶段提醒 ----

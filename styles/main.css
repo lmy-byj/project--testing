@@ -990,3 +990,40 @@ a { text-decoration: none; color: inherit; }
   padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 700;
 }
 
+/* ========================
+   疫苗接种状态
+   ======================== */
+.vac-status-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+.vac-status-btn {
+  font-size:11px; padding:3px 10px; border-radius:20px; cursor:pointer;
+  border:1.5px solid var(--border); background:var(--bg-tint); color:var(--text-mid);
+  transition:all .15s; font-weight:600;
+}
+.vac-status-btn.done { background:#EDFAF2; color:#2E7D52; border-color:#A8D8BC; }
+.vac-status-btn:active { opacity:.8; }
+.vac-date { font-size:10px; color:var(--text-light); }
+.vaccine-item.vac-done { opacity:.65; }
+
+.vac-legend { float:right; display:flex; gap:6px; font-size:11px; font-weight:400; }
+
+/* 完整疫苗接种本 */
+.vaccine-full-slot {
+  margin-bottom:12px; border:1px solid var(--border);
+  border-radius:var(--r-md); overflow:hidden;
+}
+.vaccine-full-age {
+  background:var(--bg-tint); padding:8px 12px;
+  font-size:13px; font-weight:700; color:var(--text);
+  border-bottom:1px solid var(--border);
+}
+.vaccine-full-item {
+  display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+  padding:8px 12px; border-bottom:1px solid var(--border);
+  font-size:12px;
+}
+.vaccine-full-item:last-child { border-bottom:none; }
+.vaccine-full-item.vac-done { background:#F6FBF8; }
+.vaccine-full-item.vac-overdue { background:#FFFBF0; }
+.vac-info { flex:1; min-width:160px; color:var(--text); }
+.vac-date { width:100%; font-size:10px; color:var(--success); padding-left:4px; }
+
